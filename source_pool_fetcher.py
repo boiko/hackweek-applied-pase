@@ -31,13 +31,14 @@ class BaseSourceFetcher:
         """
         Fetch new versions of sources to store locally.
         """
-        pass
+        raise NotImplementedError()
 
     def ensure_package(self, collection, package, remove_contents=False):
         """
         Ensures the package directory exists, if not, creates it.
         :param collection: The collection
         :param package: the package
+        :param remove_contents: clean up the package directory (useful for refreshing)
         :return: A `Path` object to the directory
         """
         collection_dir = self.target_dir / collection
