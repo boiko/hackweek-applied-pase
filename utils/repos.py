@@ -1,11 +1,13 @@
 import requests
 import gzip
+import logging
 from lxml import objectify
 from urllib.parse import urljoin
 
 class RepoHelper:
     def __init__(self, session=None):
         self.session = session or requests.sessions.Session()
+        self.logger = logging.getLogger("repo_helper")
 
     def download_and_unpack(self, url):
         """
@@ -13,6 +15,7 @@ class RepoHelper:
         :param url: The full URL to the file to be downloaded/unpacked
         :return:
         """
+        self.logger.debug(f"Downloading and unpacking {url}")
         response = self.session.get(url)
         try:
             data = gzip.decompress(response.content)

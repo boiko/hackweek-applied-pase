@@ -13,6 +13,7 @@ from io import BytesIO
 import requests
 import rpmfile
 import shutil
+import logging
 
 class BaseSourceFetcher:
     """
@@ -100,6 +101,7 @@ class OpenSuseSourceFetcher(BaseSourceFetcher):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.session = requests.sessions.Session()
+        self.logger = logging.getLogger("opensuse_fetcher")
 
     def download_rpm(self, rpm_url):
         """
@@ -108,6 +110,7 @@ class OpenSuseSourceFetcher(BaseSourceFetcher):
         :param rpm_url: The url to the rpm file
         :return: `rpmfile.RPMFile` object
         """
+        self.logger.debug(f"Downloading rpm {rpm_url}")
         package = self.session.get(rpm_url).content
         return rpmfile.open(fileobj=BytesIO(package))
 
@@ -122,7 +125,7 @@ class OpenSuseSourceFetcher(BaseSourceFetcher):
         for collection, packages in package_collection.items():
             for package, package_url in packages:
                 if not self.check_package(collection, package, package_url):
-                    print(f"Package {collection}/{package} is outdated")
+                    self.logger.info(f"Package {collection}/{package} is outdated. Refreshing...")
                     package_dir = self.ensure_package(collection, package, remove_contents=True)
                     rpm = self.download_rpm(package_url)
                     for member in rpm.getmembers():
@@ -133,6 +136,15 @@ class OpenSuseSourceFetcher(BaseSourceFetcher):
 
 
 if __name__ == '__main__':
+    # silence urllib logger, we don't need to dive this deep
+    urllib_logger = logging.getLogger("urllib3.connectionpool")
+    urllib_logger.setLevel(logging.WARNING)
+
+    # just be more verbose during development
+    logging.basicConfig(level=logging.DEBUG)
+
     # default to the only implementation for now
     fetcher = OpenSuseSourceFetcher(target_dir="./packages")
     fetcher.fetch_sources()
+
+
