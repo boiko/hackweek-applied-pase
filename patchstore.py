@@ -8,7 +8,7 @@ import os.path
 import sqlite3
 
 
-Patch = namedtuple('Patch', ('filename', 'content', 'checksum', 'origin', 'timestamp'))
+Patch = namedtuple('Patch', ('filename', 'content', 'checksum', 'producer', 'origin', 'timestamp'))
 Patch.decode_content = lambda self: base64.b64decode(self.content)
 
 
@@ -30,16 +30,19 @@ class PatchStore(object):
         with self.db:
             self.db.execute(
                 'CREATE TABLE IF NOT EXISTS patches'
-                '(filename TEXT, content BLOB, checksum TEXT, origin TEXT, timestamp TEXT)'
+                '(filename TEXT, content BLOB, checksum TEXT,'
+                ' producer TEXT, origin TEXT, timestamp TEXT)'
             )
 
-    def add(self, filename: str, content: bytes, origin: str, timestamp=None):
+    def add(self, filename: str, content: bytes, producer: str, origin: str, timestamp=None):
         """
         Add (insert or update) a patch to the store.
 
         :param filename: The original filename of the patch
         :param content: The patch file contents
-        :param origin: The origin of the patch (for example, if fetching from bugzilla, could be an issue ID or URL
+        :param producer: The name of the crawler that found the patch
+        :param origin: The origin of the patch (for example, if fetching
+                       from bugzilla, could be an issue ID or URL)
         :param timestamp: Some optional timestamp reference for the file in ISO 8601 format
 
         :return: True if successful, False otherwise
@@ -53,8 +56,11 @@ class PatchStore(object):
         if not content:
             logging.error('Empty patch contents')
             return False
+        if not producer:
+            logging.error('Empty producer')
+            return False
         if not origin:
-            logging.error('Storing a patch requires a valid origin')
+            logging.error('Empty origin')
             return False
         if timestamp is not None:
             try:
@@ -68,22 +74,22 @@ class PatchStore(object):
         encoded_content = base64.b64encode(content)
         checksum = self.compute_checksum(encoded_content)
 
-        if not self.exists(filename, origin):
+        if not self.exists(filename, producer, origin):
             with self.db:
                 self.db.execute(
-                    'INSERT INTO patches(filename, content, checksum, origin, timestamp) '
-                    'VALUES(?, ?, ?, ?, ?)',
-                    (filename, encoded_content, checksum, origin, timestamp)
+                    'INSERT INTO patches(filename, content, checksum, producer, origin, timestamp) '
+                    'VALUES(?, ?, ?, ?, ?, ?)',
+                    (filename, encoded_content, checksum, producer, origin, timestamp)
                 )
             logging.info(f'Stored new patch: {filename} ({origin})')
         else:
             with self.db:
                 self.db.execute(
                     'UPDATE patches SET content = ?, checksum = ?, timestamp = ? '
-                    'WHERE filename = ? AND origin = ?',
-                    (encoded_content, checksum, timestamp, filename, origin)
+                    'WHERE filename = ? AND producer = ? AND origin = ?',
+                    (encoded_content, checksum, timestamp, filename, producer, origin)
                 )
-            logging.info(f'Updated existing patch: {filename} ({origin})')
+            logging.info(f'Updated existing patch: {filename} ({producer} : {origin})')
 
         return True
 
@@ -91,20 +97,21 @@ class PatchStore(object):
         hash = hashlib.sha256(encoded_content)
         return f'{hash.name}:{hash.hexdigest()}'
 
-    def exists(self, filename: str, origin: str):
+    def exists(self, filename: str, producer: str, origin: str):
         """
-        Check whether a patch matching a given filename and a given origin
-        already exists in the store.
+        Check whether a patch matching a given filename and a given producer
+        and origin already exists in the store.
 
         :param filename: The filename to search for
+        :param producer: The producer of the patch to search
         :param origin: The origin identifier of the patch to search
 
-        :return: True if the filename/origin exists on the store, False otherwise
+        :return: True if the filename/producer/origin exists in the store, False otherwise
         """
         with self.db:
             cursor = self.db.execute(
-                'SELECT * from patches WHERE filename = ? AND origin = ?',
-                (filename, origin)
+                'SELECT * from patches WHERE filename = ? AND producer = ? AND origin = ?',
+                (filename, producer, origin)
             )
             if cursor.fetchone():
                 return True
@@ -124,6 +131,15 @@ class PatchStore(object):
         :return: an iterator over all patches matching the filename
         """
         return self._search_query('SELECT * FROM patches WHERE filename = ?', (filename,))
+
+    def search_by_producer(self, producer: str):
+        """
+        Search patches by (exact) producer in the store.
+
+        :param producer: an exact producer to match against
+        :return: an iterator over all patches matching the producer
+        """
+        return self._search_query('SELECT * FROM patches WHERE producer = ?', (producer,))
 
     def search_by_origin(self, origin: str):
         """
