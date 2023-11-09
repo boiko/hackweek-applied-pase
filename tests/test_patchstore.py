@@ -17,7 +17,7 @@ class TestPatchStore(unittest.TestCase):
         for i in range(1, 10):
             self.assertTrue(
                 self.store.add(f'patch{i}.patch', f'contents of patch #{i}'.encode(),
-                               f'https://example.org/patches/patch{i}')
+                               'example producer', f'https://example.org/patches/patch{i}')
             )
 
     def tearDown(self):
@@ -33,11 +33,17 @@ class TestPatchStore(unittest.TestCase):
         time.sleep(0.1)
         self.assertTrue(
             self.store.add(filename, f'contents of patch #{i}'.encode(),
-                           f'https://example.org/patches/patch{i}')
+                           'example producer', f'https://example.org/patches/patch{i}')
         )
         patch = next(self.store.search_by_filename(filename))
         self.assertGreater(datetime.fromisoformat(patch.timestamp),
                            datetime.fromisoformat(timestamp))
+
+    def test_search_patches_by_producer(self):
+        patches = list(self.store.search_by_producer('example producer'))
+        self.assertEqual(len(patches), 9)
+        patches = list(self.store.search_by_producer('another producer'))
+        self.assertEqual(len(patches), 0)
 
     def test_search_patches_by_origin(self):
         patches = list(self.store.search_by_origin('https://example.org/patches/'))
@@ -60,7 +66,7 @@ class TestPatchStore(unittest.TestCase):
     def test_invalid_parameters(self):
         # empty filename
         with self.assertLogs('root', level=logging.ERROR) as cm:
-            self.assertFalse(self.store.add('', 'contents', 'origin'))
+            self.assertFalse(self.store.add('', 'contents', 'producer', 'origin'))
         self.assertEqual(
             cm.records.pop().msg,
             'Storing a patch requires a filename to identify the patch'
@@ -68,7 +74,7 @@ class TestPatchStore(unittest.TestCase):
 
         # invalid patch file extension
         with self.assertLogs('root', level=logging.ERROR) as cm:
-            self.assertFalse(self.store.add('patch.txt', 'contents', 'origin'))
+            self.assertFalse(self.store.add('patch.txt', 'contents', 'producer', 'origin'))
         self.assertEqual(
             cm.records.pop().msg,
             'Filename does not match that of a patch file'
@@ -76,21 +82,27 @@ class TestPatchStore(unittest.TestCase):
 
         # empty content
         with self.assertLogs('root', level=logging.ERROR) as cm:
-            self.assertFalse(self.store.add('patch.patch', '', 'origin'))
+            self.assertFalse(self.store.add('patch.patch', '', 'producer', 'origin'))
         self.assertEqual(cm.records.pop().msg, 'Empty patch contents')
+
+        # empty producer
+        with self.assertLogs('root', level=logging.ERROR) as cm:
+            self.assertFalse(self.store.add('patch.patch', 'contents', '', 'origin'))
+        self.assertEqual(cm.records.pop().msg, 'Empty producer')
 
         # empty origin
         with self.assertLogs('root', level=logging.ERROR) as cm:
-            self.assertFalse(self.store.add('patch.patch', 'contents', ''))
-        self.assertEqual(cm.records.pop().msg, 'Storing a patch requires a valid origin')
+            self.assertFalse(self.store.add('patch.patch', 'contents', 'producer', ''))
+        self.assertEqual(cm.records.pop().msg, 'Empty origin')
 
         # invalid timestamps
         with self.assertLogs('root', level=logging.ERROR) as cm:
             self.assertFalse(
-                self.store.add('patch.patch', 'contents', 'origin', 'today')
+                self.store.add('patch.patch', 'contents', 'producer', 'origin', 'today')
             )
             self.assertFalse(
-                self.store.add('patch.patch', 'contents', 'origin', '2023-11-06 11:42:41 UTC')
+                self.store.add('patch.patch', 'contents', 'producer',
+                               'origin', '2023-11-06 11:42:41 UTC')
             )
         self.assertEqual(
             cm.records.pop(0).msg,
@@ -103,6 +115,6 @@ class TestPatchStore(unittest.TestCase):
 
     def test_valid_timestamp(self):
         self.assertTrue(
-            self.store.add('patch.patch', b'contents', 'origin',
+            self.store.add('patch.patch', b'contents', 'producer', 'origin',
                            datetime(2023, 11, 6, 15, 42, 6).isoformat())
         )
