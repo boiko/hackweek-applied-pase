@@ -36,6 +36,13 @@ class PatchStore(object):
     def add(self, filename: str, content: bytes, origin: str, timestamp=None):
         """
         Add (insert or update) a patch to the store.
+        
+        :param filename: The original filename of the patch
+        :param content: The patch file contents
+        :param origin: The origin of the patch (for example, if fetching from bugzilla, could be an issue ID or URL
+        :param timestamp: Some optional timestamp reference for the file in ISO 8601 format
+        
+        :return: True if successful, False otherwise
         """
         if not filename:
             logging.error('Storing a patch requires a filename to identify the patch')
