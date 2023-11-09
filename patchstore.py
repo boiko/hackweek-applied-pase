@@ -36,12 +36,12 @@ class PatchStore(object):
     def add(self, filename: str, content: bytes, origin: str, timestamp=None):
         """
         Add (insert or update) a patch to the store.
-        
+
         :param filename: The original filename of the patch
         :param content: The patch file contents
         :param origin: The origin of the patch (for example, if fetching from bugzilla, could be an issue ID or URL
         :param timestamp: Some optional timestamp reference for the file in ISO 8601 format
-        
+
         :return: True if successful, False otherwise
         """
         if not filename:
@@ -95,10 +95,10 @@ class PatchStore(object):
         """
         Check whether a patch matching a given filename and a given origin
         already exists in the store.
-        
+
         :param filename: The filename to search for
         :param origin: The origin identifier of the patch to search
-        
+
         :return: True if the filename/origin exists on the store, False otherwise
         """
         with self.db:
@@ -117,12 +117,32 @@ class PatchStore(object):
                 yield Patch(*row)
 
     def search_by_filename(self, filename: str):
+        """
+        Search patches by (exact) filename in the store.
+
+        :param filename: an exact filename to match against
+        :return: an iterator over all patches matching the filename
+        """
         return self._search_query('SELECT * FROM patches WHERE filename = ?', (filename,))
 
     def search_by_origin(self, origin: str):
+        """
+        Search patches by origin in the store.
+        The search term may be given as a prefix to match a wide range of patches.
+
+        :param origin: an origin (prefix) to match against
+        :return: an iterator over all patches matching the origin
+        """
         return self._search_query('SELECT * FROM patches WHERE origin LIKE ? || "%"', (origin,))
 
     def search_by_content(self, content: bytes):
+        """
+        Search patches by (exact) content in the store.
+        The actual search is done on the checksum of the contents.
+
+        :param content: the exact contents of the patch to match against
+        :return: an iterator over all patches matching the patch contents
+        """
         encoded_content = base64.b64encode(content)
         checksum = self.compute_checksum(encoded_content)
         return self._search_query('SELECT * FROM patches WHERE checksum = ?', (checksum,))
