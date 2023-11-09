@@ -40,7 +40,7 @@ class PatchStore(object):
         if not filename:
             logging.error('Storing a patch requires a filename to identify the patch')
             return False
-        if mimetypes.guess_type(filename)[0] != 'text/x-patch':
+        if mimetypes.guess_type(filename)[0] not in ('text/x-diff', 'text/x-patch'):
             logging.error('Filename does not match that of a patch file')
             return False
         if not content:
