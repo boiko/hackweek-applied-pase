@@ -95,6 +95,11 @@ class PatchStore(object):
         """
         Check whether a patch matching a given filename and a given origin
         already exists in the store.
+        
+        :param filename: The filename to search for
+        :param origin: The origin identifier of the patch to search
+        
+        :return: True if the filename/origin exists on the store, False otherwise
         """
         with self.db:
             cursor = self.db.execute(
