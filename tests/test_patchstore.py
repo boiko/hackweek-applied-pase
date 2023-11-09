@@ -16,7 +16,7 @@ class TestPatchStore(unittest.TestCase):
         self.store = PatchStore(filepath)
         for i in range(1, 10):
             self.assertTrue(
-                self.store.add(f'patch{i}.patch', f'contents of patch #{i}',
+                self.store.add(f'patch{i}.patch', f'contents of patch #{i}'.encode(),
                                f'https://example.org/patches/patch{i}')
             )
 
@@ -32,7 +32,7 @@ class TestPatchStore(unittest.TestCase):
         timestamp = patch.timestamp
         time.sleep(0.1)
         self.assertTrue(
-            self.store.add(filename, f'contents of patch #{i}',
+            self.store.add(filename, f'contents of patch #{i}'.encode(),
                            f'https://example.org/patches/patch{i}')
         )
         patch = next(self.store.search_by_filename(filename))
@@ -52,9 +52,9 @@ class TestPatchStore(unittest.TestCase):
         self.assertEqual(len(patches), 0)
 
     def test_search_patches_by_content(self):
-        patches = list(self.store.search_by_content('contents of patch #4'))
+        patches = list(self.store.search_by_content(b'contents of patch #4'))
         self.assertEqual(len(patches), 1)
-        patches = list(self.store.search_by_content('unknown content'))
+        patches = list(self.store.search_by_content(b'unknown content'))
         self.assertEqual(len(patches), 0)
 
     def test_invalid_parameters(self):
@@ -103,6 +103,6 @@ class TestPatchStore(unittest.TestCase):
 
     def test_valid_timestamp(self):
         self.assertTrue(
-            self.store.add('patch.patch', 'contents', 'origin',
+            self.store.add('patch.patch', b'contents', 'origin',
                            datetime(2023, 11, 6, 15, 42, 6).isoformat())
         )

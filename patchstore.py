@@ -33,7 +33,7 @@ class PatchStore(object):
                 '(filename TEXT, content BLOB, checksum TEXT, origin TEXT, timestamp TEXT)'
             )
 
-    def add(self, filename: str, content: str, origin: str, timestamp=None):
+    def add(self, filename: str, content: bytes, origin: str, timestamp=None):
         """
         Add (insert or update) a patch to the store.
         """
@@ -58,7 +58,7 @@ class PatchStore(object):
         else:
             timestamp = datetime.now().isoformat(sep=' ')
 
-        encoded_content = base64.b64encode(content.encode())
+        encoded_content = base64.b64encode(content)
         checksum = self.compute_checksum(encoded_content)
 
         if not self.exists(filename, origin):
@@ -110,7 +110,7 @@ class PatchStore(object):
     def search_by_origin(self, origin: str):
         return self._search_query('SELECT * FROM patches WHERE origin LIKE ? || "%"', (origin,))
 
-    def search_by_content(self, content: str):
-        encoded_content = base64.b64encode(content.encode())
+    def search_by_content(self, content: bytes):
+        encoded_content = base64.b64encode(content)
         checksum = self.compute_checksum(encoded_content)
         return self._search_query('SELECT * FROM patches WHERE checksum = ?', (checksum,))
