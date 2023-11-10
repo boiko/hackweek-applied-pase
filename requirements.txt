@@ -1,3 +1,4 @@
 requests
 lxml
 rpmfile @ git+https://github.com/boiko/rpmfile@master
+rpm-vercmp
