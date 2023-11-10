@@ -1,6 +1,8 @@
 from urllib3.exceptions import ProtocolError
 from requests.exceptions import ConnectionError, RequestException
 
+import logging
+
 def session_get_with_retries(session, url, tries=4):
     """
     Sometimes downloads fail with connection drops or other temporary errors.
@@ -14,8 +16,9 @@ def session_get_with_retries(session, url, tries=4):
     while tries > 0:
         try:
             return session.get(url)
-        except (ProtocolError , ConnectionError):
+        except (ProtocolError , ConnectionError) as e:
             if tries > 0:
+                logging.warning(f"Request error, trying again: {str(e)}")
                 tries = tries - 1
                 pass
             else:
