@@ -1,3 +1,7 @@
+# Copyright 2023 Olivier Tilloy
+# This work is licensed under the GNU GPLv3 or later.
+# See the COPYING file in the top-level directory.
+
 import base64
 from collections import namedtuple
 from datetime import datetime
