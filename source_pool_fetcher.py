@@ -8,6 +8,7 @@ Provides methods for generating pools of source files
 """
 
 from utils.repos import RepoHelper
+from utils.misc import session_get_with_retries
 from pathlib import Path
 from io import BytesIO
 import requests
@@ -111,7 +112,7 @@ class OpenSuseSourceFetcher(BaseSourceFetcher):
         :return: `rpmfile.RPMFile` object
         """
         self.logger.debug(f"Downloading rpm {rpm_url}")
-        package = self.session.get(rpm_url).content
+        package = session_get_with_retries(self.session, rpm_url).content
         return rpmfile.open(fileobj=BytesIO(package))
 
     def fetch_sources(self):

@@ -3,6 +3,7 @@ import gzip
 import logging
 from lxml import objectify
 from urllib.parse import urljoin
+from .misc import session_get_with_retries
 
 class RepoHelper:
     def __init__(self, session=None):
@@ -16,7 +17,7 @@ class RepoHelper:
         :return:
         """
         self.logger.debug(f"Downloading and unpacking {url}")
-        response = self.session.get(url)
+        response = session_get_with_retries(self.session, url)
         try:
             data = gzip.decompress(response.content)
         except gzip.BadGzipFile:
