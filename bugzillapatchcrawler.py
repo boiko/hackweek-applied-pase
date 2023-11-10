@@ -75,26 +75,26 @@ class BugzillaPatchCrawler(PatchCrawler):
 if __name__ == '__main__':
     default_instance = 'https://bugzilla.opensuse.org'
     parser = argparse.ArgumentParser(description='Sample Bugzilla Patch Crawler.')
-    parser.add_argument('-i', metavar='instance',
+    parser.add_argument('--instance', '-i', metavar='instance',
                         help=f'an optional Bugzilla instance URL (defaults to {default_instance})')
-    parser.add_argument('-k', metavar='apikey',
+    parser.add_argument('--api-key', '-k', metavar='apikey',
                         help='an optional Bugzilla API key (see https://bugzilla.readthedocs.org/en/5.0/api/core/v1/general.html#authentication)')
-    parser.add_argument('-o', metavar='outfile',
+    parser.add_argument('--output-file', '-o', metavar='outfile',
                         help='an optional file path to write the Patch Store database to (a temporary file will be used if not specified)')
-    parser.add_argument('-t', metavar='delta',
+    parser.add_argument('--time-delta', '-t', metavar='delta',
                         help='an optional time delta (specified in days, defaults to 1)')
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
 
-    if args.o is None:
+    if args.output_file is None:
         dbfile, filepath = tempfile.mkstemp(suffix='.db')
         os.close(dbfile)
     else:
-        filepath = args.o
+        filepath = args.output_file
     store = PatchStore(filepath)
 
-    instance = args.i or default_instance
-    timestamp = datetime.now() - timedelta(days=int(args.t or 1), seconds=1)
-    crawler = BugzillaPatchCrawler(store, instance, args.k, timestamp)
+    instance = args.instance or default_instance
+    timestamp = datetime.now() - timedelta(days=int(args.time_delta or 1), seconds=1)
+    crawler = BugzillaPatchCrawler(store, instance, args.api_key, timestamp)
     crawler.crawl()
