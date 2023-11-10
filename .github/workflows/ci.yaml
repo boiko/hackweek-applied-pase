@@ -17,6 +17,7 @@ jobs:
           python-version: '3.x'
           cache: 'pip'
       - run: pip install -r requirements.txt
+      - run: pip install -r requirements_devel.txt
       - run: pip install coverage
       - name: Run unit tests with code coverage
         run: coverage run -m unittest
