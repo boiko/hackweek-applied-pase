@@ -19,6 +19,6 @@ jobs:
       - run: pip install -r requirements.txt
       - run: pip install coverage
       - name: Run unit tests with code coverage
-        run: coverage run -m unittest discover tests
+        run: coverage run -m unittest
       - name: Display code coverage report
         run: coverage report
