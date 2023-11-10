@@ -35,7 +35,7 @@ class BugzillaPatchCrawler(PatchCrawler):
                 'Not an hour has passed since last crawled, not doing anything.'
             )
             return
-        self.logger.info('Start crawling')
+        self.logger.info('Start crawling.')
         total = 0
         query = {
             'f1': 'days_elapsed', 'o1': 'lessthaneq', 'v1': str(elapsed.days + 1),
@@ -64,6 +64,7 @@ class BugzillaPatchCrawler(PatchCrawler):
                     if self.store.add(
                         attachment['file_name'],
                         attachment['data'].data,
+                        self.name,
                         bug.weburl,
                         lastchange.isoformat(sep=' ')
                     ):
