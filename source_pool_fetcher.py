@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# Copyright 2023 Gustavo Boiko
+# This work is licensed under the GNU GPLv3 or later.
+# See the COPYING file in the top-level directory.
+
 """
 Source pool fetcher
 

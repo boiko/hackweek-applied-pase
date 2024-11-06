@@ -1,3 +1,7 @@
+# Copyright 2023 Gustavo Boiko
+# This work is licensed under the GNU GPLv3 or later.
+# See the COPYING file in the top-level directory.
+
 from urllib3.exceptions import ProtocolError
 from requests.exceptions import ConnectionError, RequestException
 
